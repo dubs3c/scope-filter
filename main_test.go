@@ -45,3 +45,10 @@ func TestFilter(t *testing.T) {
 		t.Errorf("expected %v, got %v", expectedOutput, filteredDomains)
 	}
 }
+
+func TestIsDomainMatch(t *testing.T) {
+	b := isDomainMatch("subdomain.domain.local", "domain.local")
+	if b != true {
+		t.Error("expected true, got false")
+	}
+}

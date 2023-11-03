@@ -91,7 +91,7 @@ func isMatch(domainOrIP string, targets *map[string]bool) bool {
 func isDomainMatch(domain, target string) bool {
 
 	// stupid hack
-	if !strings.Contains(domain, "://") {
+	if !strings.HasPrefix(domain, "https://") && !strings.HasPrefix(domain, "http://") {
 		domain = "http://" + domain
 	}
 
