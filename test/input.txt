@@ -4,8 +4,8 @@ hej.microsoft.com
 bookie.dubell.io
 shit.infd.pw
 hidden.c.collab.dubell.io
-https://hej.microsoft.com/welcome
-https://test.dubell.io/this/is/a/path
+https://heJ.microsoft.com/welcome
+https://test.dubeLL.io/this/is/a/path
 https://shit.infd.pw/admin.panel.html
 192.168.1.34
 192.168.1.156

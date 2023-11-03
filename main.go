@@ -12,7 +12,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: cat input.txt | filter target.txt")
-		return
+		os.Exit(1)
 	}
 
 	targetsPath := os.Args[1]
@@ -21,7 +21,7 @@ func main() {
 	targets, err := readTargetsFromFile(targetsPath)
 	if err != nil {
 		fmt.Println("Error reading target domains:", err)
-		return
+		os.Exit(1)
 	}
 
 	stdin := os.Stdin
@@ -30,11 +30,10 @@ func main() {
 	filteredDomains, err := readDomainsFromStdin(targets, stdin)
 	if err != nil {
 		fmt.Println("Error reading input domains:", err)
-		return
+		os.Exit(1)
 	}
 
 	// Print the filtered domains
-	// fmt.Println("Filtered domains:")
 	for _, domain := range *filteredDomains {
 		fmt.Println(domain)
 	}
@@ -51,7 +50,7 @@ func readTargetsFromFile(filename string) (*map[string]bool, error) {
 	targetMap := make(map[string]bool)
 	scanner := bufio.NewScanner(targetFileHandle)
 	for scanner.Scan() {
-		targetMap[string(scanner.Text())] = true
+		targetMap[strings.ToLower((scanner.Text()))] = true
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -65,9 +64,11 @@ func readTargetsFromFile(filename string) (*map[string]bool, error) {
 func readDomainsFromStdin(targets *map[string]bool, data *os.File) (*[]string, error) {
 	var domains []string
 	scanner := bufio.NewScanner(data)
+	var input string
 	for scanner.Scan() {
-		if isMatch(scanner.Text(), targets) {
-			domains = append(domains, scanner.Text())
+		input = strings.ToLower(scanner.Text())
+		if isMatch(input, targets) {
+			domains = append(domains, input)
 		}
 	}
 	if err := scanner.Err(); err != nil {
