@@ -12,3 +12,9 @@ https://shit.infd.pw/admin.panel.html
 192.168.1.34
 192.168.1.156
 ```
+
+## Install
+
+```
+$ go install github.com/dubs3c/scope-filter@latest
+```
