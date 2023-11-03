@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -11,37 +11,22 @@ func TestFilter(t *testing.T) {
 	// Read target domains and IP ranges from file
 	targets, err := readTargetsFromFile("test/target.txt")
 	if err != nil {
-		fmt.Println("Error reading target domains:", err)
-		return
+		t.Fatal("Error reading target domains:", err)
 	}
 
-	// Create a map to store target domains and IP ranges
-	targetMap := make(map[string]bool)
-	for _, target := range targets {
-		targetMap[target] = true
+	inputHandle, err := os.Open("test/input.txt")
+	if err != nil {
+		t.Fatal("Error reading input file", err)
 	}
+	defer inputHandle.Close()
 
 	// Read input domains from standard input (piped in)
-	// In normal use case, this would be read from stdin
-	inputDomains, err := readTargetsFromFile("test/input.txt")
+	filteredDomains, err := readDomainsFromStdin(targets, inputHandle)
 	if err != nil {
-		fmt.Println("Error reading input domains:", err)
-		t.Fatal(err)
+		t.Fatal("Error reading input domains:", err)
 	}
 
-	if len(inputDomains) == 0 {
-		t.Fatal("inputDomains is empty")
-	}
-
-	// Filter input domains
-	filteredDomains := []string{}
-	for _, domain := range inputDomains {
-		if isMatch(domain, targetMap) {
-			filteredDomains = append(filteredDomains, domain)
-		}
-	}
-
-	if len(filteredDomains) == 0 {
+	if len(*filteredDomains) == 0 {
 		t.Fatal("filteredDomains is empty")
 	}
 
@@ -56,7 +41,7 @@ func TestFilter(t *testing.T) {
 	}
 
 	// Compare the program's output with the expected output
-	if !reflect.DeepEqual(expectedOutput, filteredDomains) {
+	if !reflect.DeepEqual(expectedOutput, *filteredDomains) {
 		t.Errorf("expected %v, got %v", expectedOutput, filteredDomains)
 	}
 }

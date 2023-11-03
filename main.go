@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -23,60 +24,61 @@ func main() {
 		return
 	}
 
-	// Create a map to store target domains and IP ranges
-	targetMap := make(map[string]bool)
-	for _, target := range targets {
-		targetMap[target] = true
-	}
+	stdin := os.Stdin
 
 	// Read input domains from standard input (piped in)
-	inputDomains, err := readDomainsFromStdin()
+	filteredDomains, err := readDomainsFromStdin(targets, stdin)
 	if err != nil {
 		fmt.Println("Error reading input domains:", err)
 		return
 	}
 
-	// Filter input domains
-	filteredDomains := []string{}
-	for _, domain := range inputDomains {
-		if isMatch(domain, targetMap) {
-			filteredDomains = append(filteredDomains, domain)
-		}
-	}
-
 	// Print the filtered domains
 	// fmt.Println("Filtered domains:")
-	for _, domain := range filteredDomains {
+	for _, domain := range *filteredDomains {
 		fmt.Println(domain)
 	}
 }
 
 // readTargetsFromFile reads target domains and IP ranges from a file and returns them as a slice
-func readTargetsFromFile(filename string) ([]string, error) {
-	content, err := os.ReadFile(filename)
+func readTargetsFromFile(filename string) (*map[string]bool, error) {
+	targetFileHandle, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	targets := strings.Split(string(content), "\n")
-	return targets, nil
+	defer targetFileHandle.Close()
+
+	targetMap := make(map[string]bool)
+	scanner := bufio.NewScanner(targetFileHandle)
+	for scanner.Scan() {
+		targetMap[string(scanner.Text())] = true
+	}
+
+	if err := scanner.Err(); err != nil {
+		return &targetMap, err
+	}
+
+	return &targetMap, nil
 }
 
 // readDomainsFromStdin reads domains from standard input (piped in) and returns them as a slice
-func readDomainsFromStdin() ([]string, error) {
+func readDomainsFromStdin(targets *map[string]bool, data *os.File) (*[]string, error) {
 	var domains []string
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(data)
 	for scanner.Scan() {
-		domains = append(domains, scanner.Text())
+		if isMatch(scanner.Text(), targets) {
+			domains = append(domains, scanner.Text())
+		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return &domains, err
 	}
-	return domains, nil
+	return &domains, nil
 }
 
 // isMatch checks if a domain or IP address matches any of the targets
-func isMatch(domainOrIP string, targets map[string]bool) bool {
-	for target := range targets {
+func isMatch(domainOrIP string, targets *map[string]bool) bool {
+	for target := range *targets {
 		if isDomainMatch(domainOrIP, target) || isIPMatch(domainOrIP, target) {
 			return true
 		}
@@ -86,7 +88,24 @@ func isMatch(domainOrIP string, targets map[string]bool) bool {
 
 // isDomainMatch checks if a domain matches the target domain
 func isDomainMatch(domain, target string) bool {
-	return strings.Contains(domain, target)
+
+	// stupid hack
+	if !strings.Contains(domain, "://") {
+		domain = "http://" + domain
+	}
+
+	// Parse the domain as a URL
+	parsedURL, err := url.Parse(domain)
+	if err != nil {
+		// Handle parsing error if the input is not a valid URL
+		return false
+	}
+
+	// Extract the host (domain) from the parsed URL
+	host := parsedURL.Host
+
+	// Compare the apex domain with the target
+	return strings.Contains(host, target)
 }
 
 // isIPMatch checks if an IP address matches the target IP range
